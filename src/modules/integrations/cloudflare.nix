@@ -49,6 +49,7 @@ in
 
     pki.enable = lib.mkEnableOption "cfssl (Cloudflare's PKI toolkit)";
 
+    mcp.enable = lib.mkEnableOption "Cloudflare MCP servers for Claude Code";
   };
 
   config = lib.mkIf cfg.enable {
@@ -73,5 +74,39 @@ in
     env =
       lib.optionalAttrs (cfg.accountId != null) { CLOUDFLARE_ACCOUNT_ID = cfg.accountId; }
       // lib.optionalAttrs (!cfg.telemetry.enable) { WRANGLER_SEND_METRICS = "false"; };
+
+    # Streamable-HTTP /mcp endpoints (devenv's claude.code speaks stdio|http, not sse).
+    # mkDefault so a consumer's own claude.code block wins; settingsPath avoids
+    # overwriting a checked-in .claude/settings.json.
+    claude.code = lib.mkIf cfg.mcp.enable {
+      enable = lib.mkDefault true;
+      settingsPath = lib.mkDefault ".devenv/state/claude-settings.json";
+      mcpServers = {
+        cloudflare-docs = {
+          type = "http";
+          url = "https://docs.mcp.cloudflare.com/mcp";
+        };
+        cloudflare-bindings = {
+          type = "http";
+          url = "https://bindings.mcp.cloudflare.com/mcp";
+        };
+        cloudflare-observability = {
+          type = "http";
+          url = "https://observability.mcp.cloudflare.com/mcp";
+        };
+        cloudflare-radar = {
+          type = "http";
+          url = "https://radar.mcp.cloudflare.com/mcp";
+        };
+        cloudflare-dns-analytics = {
+          type = "http";
+          url = "https://dns-analytics.mcp.cloudflare.com/mcp";
+        };
+        cloudflare-graphql = {
+          type = "http";
+          url = "https://graphql.mcp.cloudflare.com/mcp";
+        };
+      };
+    };
   };
 }

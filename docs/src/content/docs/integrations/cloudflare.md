@@ -18,6 +18,7 @@ Some packages (workerd, create-cloudflare, cf-vault, and others) come from
     tunnel.enable = true;
     tunnel.quick.enable = true;
     api.enable = true;
+    mcp.enable = true;
   };
 }
 ```
@@ -44,3 +45,4 @@ dependency of the wrangler you use.
 | `cloudflare.api.cf-vault.enable` | `false` | cf-vault keychain-backed token helper. |
 | `cloudflare.infra.enable` | `false` | cf-terraforming. |
 | `cloudflare.pki.enable` | `false` | cfssl. |
+| `cloudflare.mcp.enable` | `false` | Cloudflare MCP servers for Claude Code. |
