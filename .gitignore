@@ -1,0 +1,5 @@
+.devenv
+.direnv
+result*
+devenv.local.yaml
+devenv.lock
