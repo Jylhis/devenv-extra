@@ -1,0 +1,8 @@
+# Merged only when this directory is imported by local path. Input imports must declare
+# the nixpkgs-extra input and overlays themselves; `default` provides ellsp.
+inputs:
+  nixpkgs-extra:
+    url: github:Jylhis/nixpkgs-extra
+    overlays:
+      - default
+      - overrides
