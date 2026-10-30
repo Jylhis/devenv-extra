@@ -1,0 +1,8 @@
+# Merged only when this directory is imported by local path. Input imports must
+# declare nixpkgs-extra and both overlays themselves (cf-vault needs `overrides`).
+inputs:
+  nixpkgs-extra:
+    url: github:Jylhis/nixpkgs-extra
+    overlays:
+      - default
+      - overrides
