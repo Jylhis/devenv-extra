@@ -24,6 +24,7 @@ let
     workers.rust.enable = true;
     scaffold.enable = true;
     tunnel.enable = true;
+    tunnel.quick.enable = true;
     api.enable = true;
     api.cf-vault.enable = true;
     infra.enable = true;
@@ -33,6 +34,8 @@ in
 assert off.packages == [ ] && off.env == { } && off.processes == { };
 assert lib.length base.packages == 1;
 assert base.env == { WRANGLER_SEND_METRICS = "false"; };
+assert full.processes ? cloudflare-tunnel;
+assert lib.hasInfix "--url http://127.0.0.1:8787" full.processes.cloudflare-tunnel.exec;
 assert lib.length full.packages == 9;
 assert full.env.CLOUDFLARE_ACCOUNT_ID == "acct";
 true

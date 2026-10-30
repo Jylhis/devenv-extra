@@ -16,6 +16,7 @@ Some packages (workerd, create-cloudflare, cf-vault, and others) come from
     accountId = "0123456789abcdef0123456789abcdef";
     workers.workerd.enable = true;
     tunnel.enable = true;
+    tunnel.quick.enable = true;
     api.enable = true;
   };
 }
@@ -37,6 +38,8 @@ dependency of the wrangler you use.
 | `cloudflare.workers.rust.enable` | `false` | worker-build for Rust Workers. |
 | `cloudflare.scaffold.enable` | `false` | create-cloudflare (C3) scaffolder. |
 | `cloudflare.tunnel.enable` | `false` | The cloudflared CLI. |
+| `cloudflare.tunnel.quick.enable` | `false` | Process running a credential-free quick tunnel. |
+| `cloudflare.tunnel.quick.port` | `8787` | Local port exposed on a trycloudflare.com URL. |
 | `cloudflare.api.enable` | `false` | flarectl. |
 | `cloudflare.api.cf-vault.enable` | `false` | cf-vault keychain-backed token helper. |
 | `cloudflare.infra.enable` | `false` | cf-terraforming. |

@@ -32,6 +32,14 @@ in
 
     tunnel.enable = lib.mkEnableOption "the cloudflared tunnel CLI";
 
+    tunnel.quick = {
+      enable = lib.mkEnableOption "a devenv process running a credential-free quick tunnel";
+      port = lib.mkOption {
+        type = lib.types.port;
+        default = 8787;
+        description = "Local port the quick tunnel exposes on an ephemeral trycloudflare.com URL.";
+      };
+    };
 
     api.enable = lib.mkEnableOption "flarectl (Cloudflare API CLI)";
 
@@ -53,6 +61,14 @@ in
       ++ lib.optional cfg.api.cf-vault.enable pkgs.cf-vault
       ++ lib.optional cfg.infra.enable pkgs.cf-terraforming
       ++ lib.optional cfg.pki.enable pkgs.cfssl;
+
+    # devenv has no cloudflared service module, so a plain process.
+    processes = lib.mkIf (cfg.tunnel.enable && cfg.tunnel.quick.enable) {
+      cloudflare-tunnel.exec = ''
+        exec ${pkgs.cloudflared}/bin/cloudflared tunnel --no-autoupdate \
+          --url http://127.0.0.1:${toString cfg.tunnel.quick.port}
+      '';
+    };
 
     env =
       lib.optionalAttrs (cfg.accountId != null) { CLOUDFLARE_ACCOUNT_ID = cfg.accountId; }
