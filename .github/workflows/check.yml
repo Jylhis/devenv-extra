@@ -1,0 +1,53 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
+      - run: nix fmt -- --ci
+      - run: nix flake check -L
+
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      dirs: ${{ steps.find.outputs.dirs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: find
+        run: |
+          dirs=$(for d in tests/*/ examples/*/; do
+            if [ -f "$d/devenv.nix" ]; then echo "${d%/}"; fi
+          done | jq -R . | jq -sc .)
+          echo "dirs=$dirs" >> "$GITHUB_OUTPUT"
+
+  devenv:
+    needs: discover
+    if: needs.discover.outputs.dirs != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: ${{ fromJSON(needs.discover.outputs.dirs) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
+      - run: nix profile install nixpkgs#devenv
+      - name: devenv test
+        working-directory: ${{ matrix.dir }}
+        run: |
+          args=()
+          if [[ "${{ matrix.dir }}" == examples/* ]]; then
+            args=(--override-input devenv-extra "path:$GITHUB_WORKSPACE")
+          fi
+          devenv test "${args[@]}"
