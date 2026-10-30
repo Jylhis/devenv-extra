@@ -1,0 +1,11 @@
+id: no-mkpackageoption
+language: nix
+severity: error
+files:
+  - src/modules/**
+message: >-
+  Don't use `mkPackageOption` in src/modules: devenv upstream declares package
+  options with `lib.mkOption` and a `defaultText`.
+rule:
+  kind: identifier
+  regex: '^mkPackageOption$'
