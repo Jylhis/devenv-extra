@@ -1,0 +1,13 @@
+inputs:
+  nixpkgs:
+    url: github:NixOS/nixpkgs/nixos-unstable
+  nixpkgs-extra:
+    url: github:Jylhis/nixpkgs-extra
+    overlays:
+      - default
+      - overrides
+  devenv-extra:
+    url: github:Jylhis/devenv-extra
+    flake: false
+imports:
+  - devenv-extra/haxe
