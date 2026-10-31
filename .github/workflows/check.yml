@@ -9,21 +9,33 @@ on:
 permissions:
   contents: read
 
+# A new push to a pull request supersedes its running check; runs on main
+# always finish.
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
       - run: nix fmt -- --ci
       - run: nix flake check -L
 
   discover:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       dirs: ${{ steps.find.outputs.dirs }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - id: find
         run: |
           dirs=$(for d in tests/*/ examples/*/; do
@@ -34,6 +46,7 @@ jobs:
   devenv:
     needs: discover
     if: needs.discover.outputs.dirs != '[]'
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -41,13 +54,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
       - run: nix profile install nixpkgs#devenv
       - name: devenv test
         working-directory: ${{ matrix.dir }}
+        env:
+          DIR: ${{ matrix.dir }}
         run: |
           args=()
-          if [[ "${{ matrix.dir }}" == examples/* ]]; then
+          if [[ "$DIR" == examples/* ]]; then
             args=(--override-input devenv-extra "path:$GITHUB_WORKSPACE")
           fi
           devenv test "${args[@]}"
@@ -55,9 +72,29 @@ jobs:
   commits:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
       - uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
-      - run: nix run .#check-commits -- "origin/${{ github.base_ref }}..HEAD"
+      - env:
+          BASE: ${{ github.base_ref }}
+        run: nix run .#check-commits -- "origin/$BASE..HEAD"
+
+  # The one required status check: a stable name whatever the jobs above
+  # are called. commits is skipped outside pull requests, devenv when there
+  # is nothing to test.
+  ci-ok:
+    needs: [check, discover, devenv, commits]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
+        run: |
+          echo "$RESULTS"
+          jq -e 'all(. == "success" or . == "skipped")' <<<"$RESULTS"
