@@ -1,6 +1,7 @@
 # AGENTS.md
 
 Reusable devenv modules, laid out like cachix/devenv so each can be upstreamed.
+[CONTRIBUTING.md](CONTRIBUTING.md) lists the upstream rules and the check enforcing each.
 
 ## Layout
 
@@ -23,6 +24,7 @@ nix flake check -L
 nix build .#options-doc
 nix flake check --override-input nixpkgs-extra path:../nixpkgs-extra
 cd tests/<name> && devenv test
+nix run .#check-commits -- origin/main..HEAD
 ```
 
 ## Conventions
@@ -37,10 +39,12 @@ cd tests/<name> && devenv test
   `lsp.package`.
 - Generic by default: no home paths, hostnames, private repo names or secrets.
 - Packages missing from nixpkgs belong in nixpkgs-extra, never vendored here.
+- The base config (`enable = true` only) must evaluate against plain nixpkgs (`vanilla-<name>`
+  check); optional features may need nixpkgs-extra if the docs say so.
 - Tests are pure eval against the stub (no builds); extend the stub only when needed.
-- Docs: language pages end with the `@AUTOGEN_OPTIONS@` marker; keep docs in step with
-  the options.
+- Docs: language pages end with `[comment]: # (Please add your documentation on top of this
+  line)`, a blank line and `@AUTOGEN_OPTIONS@`, as upstream; keep docs in step with the options.
 - One module or feature per commit, touching only its own files, so it cherry-picks into
-  cachix/devenv.
+  cachix/devenv. `check-commits` enforces this and the subject format.
 - Commit subjects follow Conventional Commits (`feat(languages): add haxe`), with a short
   body saying why.
