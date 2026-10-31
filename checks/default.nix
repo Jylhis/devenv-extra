@@ -10,6 +10,7 @@ let
     runtimeInputs = [
       pkgs.nixpkgs-fmt
       pkgs.nixfmt
+      pkgs.go
     ];
     settings = {
       on-unmatched = "info";
@@ -17,6 +18,11 @@ let
       formatter.nixpkgs-fmt = {
         command = "nixpkgs-fmt";
         includes = [ "src/modules/**/*.nix" ];
+      };
+      formatter.gofmt = {
+        command = "gofmt";
+        options = [ "-w" ];
+        includes = [ "*.go" ];
       };
       formatter.nixfmt = {
         command = "nixfmt";

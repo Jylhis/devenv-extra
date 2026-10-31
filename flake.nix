@@ -42,10 +42,13 @@
     {
       formatter = eachSystem (system: (helpers system).formatter);
 
-      checks = eachSystem (system: (helpers system).checks);
+      checks = eachSystem (
+        system: (helpers system).checks // { inherit (self.packages.${system}) check-commits; }
+      );
 
       packages = eachSystem (system: {
         options-doc = (helpers system).optionsDoc.optionsCommonMark;
+        check-commits = pkgsFor.${system}.callPackage ./tools/check-commits/package.nix { };
       });
 
       devShells = eachSystem (
@@ -61,6 +64,7 @@
               self.formatter.${system}
               pkgs.ast-grep
               pkgs.devenv
+              pkgs.go
             ];
           };
         }
