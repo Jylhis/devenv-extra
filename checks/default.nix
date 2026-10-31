@@ -90,6 +90,15 @@ let
 
   moduleFiles = map (m: m.file) modules;
 
+  # A check that runs a linter over the source tree.
+  srcCheck =
+    name: tools: script:
+    pkgs.runCommand name { nativeBuildInputs = tools; } ''
+      cd ${src}
+      ${script}
+      touch $out
+    '';
+
   # A check that prints every problem at once, rather than stopping at the first throw.
   problemsCheck =
     name: problems:
@@ -213,6 +222,12 @@ in
       HOME=$TMPDIR treefmt --no-cache --fail-on-change
       touch $out
     '';
+
+    markdownlint = srcCheck "markdownlint" [ pkgs.markdownlint-cli2 ] ''
+      HOME=$TMPDIR markdownlint-cli2 "docs/**/*.md"
+    '';
+
+    editorconfig = srcCheck "editorconfig" [ pkgs.editorconfig-checker ] "editorconfig-checker";
 
     ast-grep = pkgs.runCommand "ast-grep" { nativeBuildInputs = [ pkgs.ast-grep ]; } ''
       cd ${src}

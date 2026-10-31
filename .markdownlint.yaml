@@ -1,0 +1,10 @@
+# Mirrors the markdownlint hook in cachix/devenv's devenv.nix.
+MD013:
+  line_length: 120
+MD033: false
+MD034: false
+# Not in upstream's config, but upstream-style pages need them: language pages start with
+# prose (the generator adds the title), and end with the `[comment]: #` marker.
+MD041: false
+MD053:
+  ignored_definitions: ["//", "comment"]
