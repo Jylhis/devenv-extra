@@ -1,0 +1,15 @@
+# Keeps the SHA-pinned actions in .github/workflows current. The "ci"
+# prefix makes subjects like "ci: bump ..." that check-commits accepts.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
