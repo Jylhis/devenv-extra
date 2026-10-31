@@ -1,5 +1,5 @@
 # Formatter and checks, shared by every system.
-{ pkgs }:
+{ pkgs, vanillaPkgs }:
 let
   inherit (pkgs) lib;
   src = ../.;
@@ -112,6 +112,46 @@ let
     ++ moduleFiles;
   };
 
+  # Modules whose base config still needs nixpkgs-extra. Keep in step with CONTRIBUTING.md and
+  # drop an entry once its packages are in nixpkgs.
+  vanillaAllowlist = {
+    emacs-lisp = "the default language server, ellsp, is only in nixpkgs-extra";
+  };
+
+  # The base config (enable = true only) must evaluate against plain nixpkgs. A missing
+  # package is not catchable by tryEval, so each module gets its own check.
+  vanillaChecks = lib.listToAttrs (
+    map (
+      m:
+      let
+        inherit
+          (lib.evalModules {
+            modules = [
+              stub
+              m.file
+              { _module.args.pkgs = vanillaPkgs; }
+              (lib.setAttrByPath (m.optPath ++ [ "enable" ]) true)
+            ];
+          })
+          config
+          ;
+        forced = builtins.deepSeq [
+          (map (p: p.drvPath) config.packages)
+          (lib.mapAttrs (_: toString) config.env)
+          (lib.mapAttrs (_: p: p.exec) config.processes)
+        ] true;
+      in
+      lib.nameValuePair "vanilla-${m.name}" (
+        pkgs.runCommand "vanilla-${m.name}" { } ''
+          ${lib.optionalString (!forced) "exit 1"}
+          touch $out
+        ''
+      )
+    ) (lib.filter (m: !vanillaAllowlist ? ${m.name}) modules)
+  );
+
+  perModuleChecks = evalChecks // vanillaChecks;
+
   # Document only options declared under src/modules, not the stub's.
   optionsDoc = pkgs.nixosOptionsDoc {
     inherit (evaluated) options;
@@ -127,7 +167,7 @@ in
 {
   inherit formatter optionsDoc;
 
-  checks = evalChecks // {
+  checks = perModuleChecks // {
     options-doc = optionsDoc.optionsCommonMark;
 
     layout = problemsCheck "layout" (
@@ -143,6 +183,13 @@ in
         inherit (evaluated) options;
       }
     );
+
+    vanilla-allowlist =
+      let
+        names = map (m: m.name) modules;
+        unknown = lib.filter (n: !lib.elem n names) (lib.attrNames vanillaAllowlist);
+      in
+      problemsCheck "vanilla-allowlist" (map (n: "vanillaAllowlist: ${n} is not a module") unknown);
 
     # Importing every module and enabling nothing must leave the shell untouched.
     defaults-off =

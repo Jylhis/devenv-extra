@@ -31,15 +31,21 @@
           ];
         }
       );
-      helpers = pkgs: import ./checks { inherit pkgs; };
+      helpers =
+        system:
+        import ./checks {
+          pkgs = pkgsFor.${system};
+          # Plain nixpkgs, as upstream devenv sees it.
+          vanillaPkgs = nixpkgs.legacyPackages.${system};
+        };
     in
     {
-      formatter = eachSystem (system: (helpers pkgsFor.${system}).formatter);
+      formatter = eachSystem (system: (helpers system).formatter);
 
-      checks = eachSystem (system: (helpers pkgsFor.${system}).checks);
+      checks = eachSystem (system: (helpers system).checks);
 
       packages = eachSystem (system: {
-        options-doc = (helpers pkgsFor.${system}).optionsDoc.optionsCommonMark;
+        options-doc = (helpers system).optionsDoc.optionsCommonMark;
       });
 
       devShells = eachSystem (
