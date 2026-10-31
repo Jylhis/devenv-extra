@@ -1,0 +1,13 @@
+id: no-home-paths
+language: nix
+severity: error
+files:
+  - src/modules/**
+message: >-
+  Don't hardcode home directories in src/modules: modules must stay generic so
+  they work for every user and upstream.
+rule:
+  any:
+    - kind: string_expression
+    - kind: indented_string_expression
+  regex: '/home/|/Users/'
