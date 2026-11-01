@@ -77,6 +77,9 @@ jobs:
           name: jylhis-extra
           extraPullNames: devenv,nix-community
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          # The push daemon holds the Nix store open, and devenv's newer Nix
+          # then waits forever for exclusive access; push after the job instead.
+          useDaemon: false
       - run: nix profile install --inputs-from . nixpkgs#devenv
       - name: devenv test
         working-directory: ${{ matrix.dir }}
