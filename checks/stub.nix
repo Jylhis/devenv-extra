@@ -21,6 +21,10 @@
       );
       default = { };
     };
+    assertions = lib.mkOption {
+      type = lib.types.listOf lib.types.unspecified;
+      default = [ ];
+    };
     claude.code = {
       enable = lib.mkOption {
         type = lib.types.bool;
